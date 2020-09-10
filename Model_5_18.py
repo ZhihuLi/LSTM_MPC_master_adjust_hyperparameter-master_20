@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import copy
 import matplotlib
 # matplotlib.rcParams['font.sans-serif'] = ['SimHei']
 
@@ -104,36 +105,38 @@ class LSTM():
         return (data - mu) / sigma, mu, sigma
 
     def eval(self):
-                predictions = []
-                labels = []
-                for i in range(self.TEST_LENGTH ):
-                    X = self.test_X[[i]]
-                    y = self.test_y[[i]]
-                    p, l = self.sess1.run([self.pred, self.loss], feed_dict={'input:0': X, 'output:0': y})
-                    # array date type
-                    predictions.append(p[0][-1])
-                    labels.append(y[0][-1])
+        print(np.shape(self.test_X))
+        print(np.shape(self.test_y))
+        X = copy.copy(self.test_X)
+        y = copy.copy(self.test_y)
+        p = self.sess1.run([self.pred], feed_dict={'input:0': X})
+        # array date type
+        print(np.shape(p))
+        p = np.array(p)
+        y = np.array(y)
+        predictions = p[0, :, 0]
+        labels = y[:, 0]
 
-                # rmse error
-                predictions = np.array(predictions)
-                labels = np.array(labels)
-                # mu: [9.65353383 14.83684211  1.98342659  6.33300273]
-                # sigma: [2.60548127 5.03382131 0.2475538  0.86990533]
-                predictions = predictions * 0.2475538 +1.98342659
-                labels = labels * 0.2475538 + 1.98342659
-                # np.mean(axis=0) is to get the column mean value
-                rmse = np.sqrt(((predictions - labels) ** 2).mean(axis=0))
-                print('Root mean square error is:%3f' % rmse)
-                # save the evaluation result
-                eval_result = np.hstack((predictions[:, np.newaxis], labels[:, np.newaxis]))
-                np.savetxt('../Data/eval_result.txt', eval_result)
-                plt.figure()
-                plt.plot(predictions, label='prediction')
-                plt.plot(labels, label='real_value')
-                plt.xlabel('Number of samples')
-                plt.ylabel('Height(mm)')
-                plt.legend()
-                # plt.show()
+        # rmse error
+        predictions = np.array(predictions)
+        labels = np.array(labels)
+        # mu: [9.65353383 14.83684211  1.98342659  6.33300273]
+        # sigma: [2.60548127 5.03382131 0.2475538  0.86990533]
+        predictions = predictions * 0.2475538 + 1.98342659
+        labels = labels * 0.2475538 + 1.98342659
+        # np.mean(axis=0) is to get the column mean value
+        rmse = np.sqrt(((predictions - labels) ** 2).mean(axis=0))
+        print('Root mean square error is:%3f' % rmse)
+        # save the evaluation result
+        eval_result = np.hstack((predictions[:, np.newaxis], labels[:, np.newaxis]))
+        np.savetxt('./Data/eval_result.txt', eval_result)
+        plt.figure()
+        plt.plot(predictions, label='prediction')
+        plt.plot(labels, label='real_value')
+        plt.xlabel('Number of samples')
+        plt.ylabel('Height(mm)')
+        plt.legend()
+        plt.show()
 
     def input_model_data(self,number):
         # # 画出焊道数据的图像
@@ -175,7 +178,7 @@ class LSTM():
 
         self.train_X = []
         self.train_y = []
-        for num in range (12,40):
+        for num in range(12, 40):
             print(num)
             raw_data_input = np.loadtxt('./Data/输入数据_6月（处理后）/input'+ str(num+1) + '.txt')
             raw_data_output = np.loadtxt('./Data/数据_6月校正后（200+100）/Height_Width_Bead'+ str(num+1) + '.txt')
@@ -281,8 +284,8 @@ if __name__ == '__main__':
     mylstm.input_model_data(0)
 
     #print('train_X :' + str(mylstm.train_X), 'train_y:' + str(mylstm.train_y))
-    # mylstm.train()
-    # mylstm.save()
+    mylstm.train()
+    mylstm.save()
 
     mylstm.restore()
     # Rs_list = []
